@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AkkaNetPlayground", "AkkaNe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DummyServerApi", "DummyServerApi\DummyServerApi.csproj", "{1DC94E7D-6616-46E9-8A50-F958988D399E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AkkaRemoteCaller", "AkkaRemoteCaller\AkkaRemoteCaller.csproj", "{0DB46A96-7372-4A19-8857-90F670614F4F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{1DC94E7D-6616-46E9-8A50-F958988D399E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1DC94E7D-6616-46E9-8A50-F958988D399E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1DC94E7D-6616-46E9-8A50-F958988D399E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0DB46A96-7372-4A19-8857-90F670614F4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0DB46A96-7372-4A19-8857-90F670614F4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0DB46A96-7372-4A19-8857-90F670614F4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0DB46A96-7372-4A19-8857-90F670614F4F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

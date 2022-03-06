@@ -1,4 +1,5 @@
 ﻿using Akka.Actor;
+using Akka.Configuration;
 using AkkaNetPlayground.Actors;
 using AkkaNetPlayground.Service;
 using Serilog;
@@ -15,7 +16,25 @@ namespace AkkaNetPlayground
                 .CreateLogger();
 
             Log.Logger = logger;
-            using (var system = ActorSystem.Create("system", "akka { loglevel=DEBUG, loggers=[\"Akka.Logger.Serilog.SerilogLogger, Akka.Logger.Serilog\"]}"))
+
+            var config = ConfigurationFactory.ParseString(@"
+akka {  
+    loglevel=DEBUG, 
+    loggers=[""Akka.Logger.Serilog.SerilogLogger, Akka.Logger.Serilog""]
+
+    actor {
+        provider = remote
+    }
+
+    remote {
+        dot-netty.tcp {
+            port = 9000
+            hostname = localhost
+        }
+    }
+}");
+
+            using (var system = ActorSystem.Create("system", config))
             {
                 var apiCallService = new ApiService();
                 var apiResponseHandlerService = new ApiResposeHandlerService(system.Log);
@@ -26,7 +45,7 @@ namespace AkkaNetPlayground
                     apiResponseHandlerService
                 );
 
-                system.ActorOf(RecurringApiCallActor.Props(stream, system.Log), "demo");
+                system.ActorOf(RecurringApiCallActor.Props(stream, system.Log), "apiActor");
 
                 system.WhenTerminated.Wait();
             }
