@@ -25,6 +25,9 @@ namespace AkkaNetPlayground.Actors
                     Stream.RunStream();
                     Logger.Info("Received streaming request message");
                     break;
+                case "helloRemote!":
+                    Logger.Info("Received message from Remote sender {@sender}", Sender.Path.Address);
+                    break;
                 default:
                     Logger.Info("Received unknown message");
                     break;
@@ -33,7 +36,7 @@ namespace AkkaNetPlayground.Actors
 
         protected override void PreStart()
         {
-            Timers.StartPeriodicTimer("runStreamKey", "stream", TimeSpan.FromSeconds(0.1), TimeSpan.FromSeconds(2));
+            Timers.StartPeriodicTimer("runStreamKey", "stream", TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
         }
 
         // static ctor
