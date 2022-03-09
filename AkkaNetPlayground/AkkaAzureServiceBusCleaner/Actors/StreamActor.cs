@@ -37,7 +37,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
 
         protected override void PreStart()
         {
-            Timers.StartPeriodicTimer("runStreamKey", "start", TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2));
+            Timers.StartPeriodicTimer("runStreamKey", "start", TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1.5));
         }
       
         public static Props Props(IStream stream, ILoggingAdapter logger)

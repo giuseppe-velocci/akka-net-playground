@@ -25,13 +25,14 @@ namespace AkkaAzureServiceBusCleaner.Services
 
         public async Task<Result> Execute()
         {
-            ServiceBusReceivedMessage peekedMessage = await Receiver.PeekMessageAsync();
+             ServiceBusReceivedMessage peekedMessage = await Receiver.PeekMessageAsync();
             if (peekedMessage.ExpiresAt < Ago)
             {
-                Logger.Debug("Message {id} is to be removed", peekedMessage.MessageId);
-                await Receiver.CompleteMessageAsync(peekedMessage);
+                var lockedMessage = await Receiver.ReceiveDeferredMessageAsync(peekedMessage.SequenceNumber);
+                Logger.Debug("Message {id} is to be removed", lockedMessage.MessageId);
+                await Receiver.CompleteMessageAsync(lockedMessage);
                 return Result.Ok;
-            } 
+            }
             else
             {
                 Logger.Debug("Message {id} must stay", peekedMessage.MessageId);
