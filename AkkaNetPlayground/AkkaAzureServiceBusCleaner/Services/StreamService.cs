@@ -13,7 +13,7 @@ namespace AkkaAzureServiceBusCleaner.Services
         private readonly ISourceService<Result> Service;
         private readonly ActorSystem System;
         private readonly string ActorPath;
-        private readonly int BatchSize = 100;
+        private readonly int BatchSize = 10;
 
         public StreamService(
             ISourceService<Result> service,

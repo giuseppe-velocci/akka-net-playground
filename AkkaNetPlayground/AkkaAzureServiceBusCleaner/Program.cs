@@ -3,8 +3,10 @@ using Akka.Configuration;
 using AkkaAzureServiceBusCleaner.Actors;
 using AkkaAzureServiceBusCleaner.Services;
 using Azure.Messaging.ServiceBus;
+using Newtonsoft.Json;
 using Serilog;
 using System;
+using System.IO;
 
 namespace AkkaAzureServiceBusCleaner
 {
@@ -19,11 +21,9 @@ namespace AkkaAzureServiceBusCleaner
 
             Log.Logger = logger;
 
-            ServiceBusConfig sbConfig = new ServiceBusConfig(
-                "",
-                "",
-                ""
-            );
+            string jsonConfig = File.ReadAllText("app-config.json");
+            ServiceBusConfig sbConfig = JsonConvert.DeserializeObject<ServiceBusConfig>(jsonConfig);
+
             // since ServiceBusClient implements IAsyncDisposable we create it with "await using"
             var client = new ServiceBusClient(sbConfig.ConnectionString);
             ServiceBusReceiver receiver = client.CreateReceiver(sbConfig.TopicName, sbConfig.Subscription);

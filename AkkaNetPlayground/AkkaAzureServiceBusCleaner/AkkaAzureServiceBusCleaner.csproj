@@ -197,6 +197,10 @@
     <Compile Include="Services\StreamService.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app-config.json">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>

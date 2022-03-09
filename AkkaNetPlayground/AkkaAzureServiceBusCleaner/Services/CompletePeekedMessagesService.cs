@@ -1,5 +1,4 @@
-﻿using Akka.Event;
-using AkkaAzureServiceBusCleaner.Service;
+﻿using AkkaAzureServiceBusCleaner.Service;
 using Azure.Messaging.ServiceBus;
 using Serilog;
 using System;
@@ -26,7 +25,7 @@ namespace AkkaAzureServiceBusCleaner.Services
 
         public async Task<Result> Execute()
         {
-            ServiceBusReceivedMessage peekedMessage = await Receiver.ReceiveMessageAsync();
+            ServiceBusReceivedMessage peekedMessage = await Receiver.PeekMessageAsync();
             if (peekedMessage.ExpiresAt < Ago)
             {
                 Logger.Debug("Message {id} is to be removed", peekedMessage.MessageId);
