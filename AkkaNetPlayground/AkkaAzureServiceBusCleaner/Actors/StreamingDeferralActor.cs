@@ -105,7 +105,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
         private void IncreaseSkip()
         {
             skipCount++;
-            if (skipCount == maxMessages && skipCount + maxMessages < MAX_SB_MESSAGES)
+            if (skipCount == maxMessages && (skipCount + maxMessages) < MAX_SB_MESSAGES)
             {
                 maxMessages++;
             }
@@ -115,7 +115,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 Self.Ask(Result.ProcessingStopped);
             }
 
-            Logger.Debug("Messages Fetch count: {maxMessages} -  Skip Count: {skip}", maxMessages, skipCount);
+            Logger.Debug("Messages Fetch count: {maxMessages} - Skip Count: {skip}", maxMessages, skipCount);
         }
 
         protected async override void OnReceive(object message)
@@ -123,7 +123,6 @@ namespace AkkaAzureServiceBusCleaner.Actors
             switch (message)
             {
                 case Result.Start:
-                case Result.IterationComplete:
                     Logger.Info("Received streaming request message by {res}", message);
                     await StreamToComplete();
                     break;
@@ -134,6 +133,12 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 case Result.ProcessingComplete:
                 case Result.ProcessingStopped:
                     Logger.Info("Completed with status {message}", message);
+                    break;
+                case Result.IterationComplete: // To be fixed handling of rerun in case of error
+                    Logger.Info("Completed iteration");
+                    break;
+                default:
+                    Logger.Info("unexpected message");
                     break;
             }
         }
