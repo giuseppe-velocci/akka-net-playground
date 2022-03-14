@@ -1,7 +1,6 @@
 ﻿using Akka.Actor;
 using Akka.Configuration;
 using AkkaAzureServiceBusCleaner.Actors;
-using AkkaAzureServiceBusCleaner.Services;
 using Azure.Messaging.ServiceBus;
 using Newtonsoft.Json;
 using Serilog;
@@ -28,7 +27,7 @@ namespace AkkaAzureServiceBusCleaner
             var client = new ServiceBusClient(sbConfig.ConnectionString);
             ServiceBusReceiver receiver = client.CreateReceiver(sbConfig.TopicName, sbConfig.Subscription);
 
-            CompletePeekedMessagesService sbService = new CompletePeekedMessagesService(receiver, new TimeSpan(36, 0, 0), logger);
+            // CompletePeekedMessagesService sbService = new CompletePeekedMessagesService(receiver, new TimeSpan(36, 0, 0), logger);
 
             var config = ConfigurationFactory.ParseString(@"
 akka {  
@@ -38,10 +37,11 @@ akka {
 
             using (var system = ActorSystem.Create("cleanerSystem", config))
             {
-                var stream = new StreamService(sbService, system, "user/receiverActor");
-                var streamActor = system.ActorOf(StreamActor.Props(stream, system.Log), "streamActor");
-                system.ActorOf(StreamReceiverActor.Props(streamActor, system.Log), "receiverActor");
-
+                /* var stream = new StreamService(sbService, system, "user/receiverActor");
+                 var streamActor = system.ActorOf(StreamActor.Props(stream, system.Log), "streamActor");
+                 system.ActorOf(StreamReceiverActor.Props(streamActor, system.Log), "receiverActor");
+                */
+                var deferralActor = system.ActorOf(StreamingDeferralActor.Props(system, receiver, new TimeSpan(36, 0, 0), system.Log), "deferralActor");
                 system.WhenTerminated.Wait();
             }
         }

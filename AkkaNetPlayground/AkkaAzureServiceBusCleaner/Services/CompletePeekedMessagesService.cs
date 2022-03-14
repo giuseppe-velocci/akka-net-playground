@@ -2,6 +2,7 @@
 using Azure.Messaging.ServiceBus;
 using Serilog;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AkkaAzureServiceBusCleaner.Services
@@ -11,6 +12,8 @@ namespace AkkaAzureServiceBusCleaner.Services
         private readonly ServiceBusReceiver Receiver;
         private readonly DateTime Ago;
         private readonly ILogger Logger;
+
+        private readonly int maxMessages = 10;
 
         public CompletePeekedMessagesService(
             ServiceBusReceiver receiver,
@@ -25,7 +28,7 @@ namespace AkkaAzureServiceBusCleaner.Services
 
         public async Task<Result> Execute()
         {
-             ServiceBusReceivedMessage peekedMessage = await Receiver.PeekMessageAsync();
+             var peekedMessage = await Receiver.PeekMessageAsync();
             if (peekedMessage.ExpiresAt < Ago)
             {
                 var lockedMessage = await Receiver.ReceiveDeferredMessageAsync(peekedMessage.SequenceNumber);

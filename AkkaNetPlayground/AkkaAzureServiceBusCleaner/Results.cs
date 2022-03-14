@@ -3,9 +3,11 @@
     public enum Result
     {
         Undefined,
+        Start,
         Ok,
         Ko,
         Interrupted,
-        Done
+        IterationComplete, // completed one iteration
+        ProcessingComplete // completed all messages
     }
 }
