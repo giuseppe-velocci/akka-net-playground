@@ -110,6 +110,11 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 maxMessages++;
             }
 
+            if (skipCount + maxMessages == MAX_SB_MESSAGES)
+            {
+                Self.Ask(Result.ProcessingStopped);
+            }
+
             Logger.Debug("Messages Fetch count: {maxMessages} -  Skip Count: {skip}", maxMessages, skipCount);
         }
 
@@ -118,17 +123,17 @@ namespace AkkaAzureServiceBusCleaner.Actors
             switch (message)
             {
                 case Result.Start:
-    //    case Result.IterationComplete:
+                case Result.IterationComplete:
                     Logger.Info("Received streaming request message by {res}", message);
                     await StreamToComplete();
                     break;
                 case Result.Interrupted:
                     Logger.Warning("Received interrupted");
-                    // handle failure, for now just restart processing
                     await StreamWithSkip();
                     break;
                 case Result.ProcessingComplete:
-                    Logger.Info("Completed");
+                case Result.ProcessingStopped:
+                    Logger.Info("Completed with status {message}", message);
                     break;
             }
         }
