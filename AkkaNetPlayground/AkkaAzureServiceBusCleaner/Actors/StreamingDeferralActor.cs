@@ -57,7 +57,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 .Log("source")
                 .SelectAsync(1, x => CompleteMessageOrNot(x))
                 .Log("select")
-                .Recover(_ => { IncreaseSkip(); return Result.Interrupted; })
+                .Recover(_ => { return Result.Interrupted; })
                 .Log("recover")
                 .AlsoTo(actorSink)
                 .Log("toActor")
