@@ -21,9 +21,8 @@ namespace AkkaAzureServiceBusCleaner.Actors
         private readonly ILoggingAdapter Logger;
 
         private int maxMessages = 10;
-        private int skipCount = 0;
-        private const int MAX_SB_MESSAGES = 100;
         private readonly ActorMaterializer Materializer;
+        private long sequenceNumber = 0;
 
         public StreamingDeferralActor(
             ActorSystem system,
@@ -42,18 +41,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
 
         public Task StreamToComplete()
         {
-            var messages = PeekMessagesWithSkip();
-            if (messages.Count <= 0)
-            {
-                Self.Ask(Result.ProcessingComplete).Wait();
-            }
-
-            return StreamFromMessages(messages);
-        }
-
-        public Task StreamWithSkip()
-        {
-            var messages = PeekMessagesWithSkip();
+            var messages = PeekMessages();
             if (messages.Count <= 0)
             {
                 Self.Ask(Result.ProcessingComplete).Wait();
@@ -76,13 +64,13 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 .RunWith(Sink.Ignore<Result>(), Materializer);
         }
 
-        private ICollection<ServiceBusReceivedMessage> PeekMessagesWithSkip()
+        private ICollection<ServiceBusReceivedMessage> PeekMessages()
         {
             var cancellationToken = new CancellationToken();
-            var messagesTask = Receiver.PeekMessagesAsync(maxMessages, 0, cancellationToken);
+            var messagesTask = Receiver.PeekMessagesAsync(maxMessages, sequenceNumber, cancellationToken);
             messagesTask.Wait();
+            sequenceNumber = messagesTask.Result.Last().SequenceNumber;
             return messagesTask.Result
-                .Skip(skipCount)
                 .ToList();
         }
 
@@ -102,22 +90,6 @@ namespace AkkaAzureServiceBusCleaner.Actors
             }
         }
 
-        private void IncreaseSkip()
-        {
-            skipCount++;
-            if (skipCount == maxMessages && (skipCount + maxMessages) < MAX_SB_MESSAGES)
-            {
-                maxMessages++;
-            }
-
-            if (skipCount + maxMessages == MAX_SB_MESSAGES)
-            {
-                Self.Ask(Result.ProcessingStopped);
-            }
-
-            Logger.Debug("Messages Fetch count: {maxMessages} - Skip Count: {skip}", maxMessages, skipCount);
-        }
-
         protected async override void OnReceive(object message)
         {
             switch (message)
@@ -128,7 +100,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
                     break;
                 case Result.Interrupted:
                     Logger.Warning("Received interrupted");
-                    await StreamWithSkip();
+                    await StreamToComplete();
                     break;
                 case Result.ProcessingComplete:
                 case Result.ProcessingStopped:
