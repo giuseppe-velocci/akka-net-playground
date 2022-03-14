@@ -125,7 +125,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 case Result.Interrupted:
                     Logger.Warning("Received interrupted");
                     // handle failure, for now just restart processing
-                    //await StreamWithSkip();
+                    await StreamWithSkip();
                     break;
                 case Result.ProcessingComplete:
                     Logger.Info("Completed");
