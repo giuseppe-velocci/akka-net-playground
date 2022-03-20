@@ -185,6 +185,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Actors\SBRouterActor.cs" />
     <Compile Include="Actors\StreamingDeferralActor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

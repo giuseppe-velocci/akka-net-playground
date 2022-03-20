@@ -4,9 +4,6 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Azure.Messaging.ServiceBus;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace AkkaAzureServiceBusCleaner.Actors
@@ -17,43 +14,32 @@ namespace AkkaAzureServiceBusCleaner.Actors
 
         private readonly ActorSystem System;
         private readonly ServiceBusReceiver Receiver;
-        private readonly DateTime Ago;
         private readonly ILoggingAdapter Logger;
 
-        private int maxMessages = 10;
         private readonly ActorMaterializer Materializer;
-        private long sequenceNumber = 0;
 
         public StreamingDeferralActor(
             ActorSystem system,
             ServiceBusReceiver receiver,
-            TimeSpan ago,
             ILoggingAdapter logger
         )
         {
+            if (receiver.ReceiveMode != ServiceBusReceiveMode.ReceiveAndDelete)
+            {
+                throw new ArgumentException("Receiver must be in peek and delete mode.");
+            }
+
             System = system;
             Receiver = receiver;
-            Ago = DateTime.UtcNow.Subtract(ago);
             Logger = logger;
 
             Materializer = System.Materializer();
         }
 
-        public Task StreamToComplete()
-        {
-            var messages = PeekMessages();
-            if (messages.Count <= 0)
-            {
-                Self.Ask(Result.ProcessingComplete).Wait();
-            }
-
-            return StreamFromMessages(messages);
-        }
-
-        private Task StreamFromMessages(ICollection<ServiceBusReceivedMessage> messages)
+        private Task StreamSequenceNumbers(long[] sequenceNumbers)
         {
             var actorSink = Sink.ActorRef<Result>(Self, Result.IterationComplete);
-            return Source.From(messages)
+            return Source.From(sequenceNumbers)
                 .Log("source")
                 .SelectAsync(1, x => CompleteMessageOrNot(x))
                 .Log("select")
@@ -64,28 +50,17 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 .RunWith(Sink.Ignore<Result>(), Materializer);
         }
 
-        private ICollection<ServiceBusReceivedMessage> PeekMessages()
+        private async Task<Result> CompleteMessageOrNot(long sequenceNumber)
         {
-            var cancellationToken = new CancellationToken();
-            var messagesTask = Receiver.PeekMessagesAsync(maxMessages, sequenceNumber, cancellationToken);
-            messagesTask.Wait();
-            sequenceNumber = messagesTask.Result.Last().SequenceNumber;
-            return messagesTask.Result
-                .ToList();
-        }
-
-        private async Task<Result> CompleteMessageOrNot(ServiceBusReceivedMessage peekedMessage)
-        {
-            if (peekedMessage.ExpiresAt < Ago)
+            try
             {
-                var lockedMessage = await Receiver.ReceiveDeferredMessageAsync(peekedMessage.SequenceNumber);
+                var lockedMessage = await Receiver.ReceiveDeferredMessageAsync(sequenceNumber);
                 Logger.Debug("Message {id} is to be removed", lockedMessage.MessageId);
-                await Receiver.CompleteMessageAsync(lockedMessage);
                 return Result.Ok;
             }
-            else
+            catch (Exception _) // to be imporved exception type!
             {
-                Logger.Debug("Message {id} must stay", peekedMessage.MessageId);
+                Logger.Debug("Message at sequnce number {id} must stay", sequenceNumber);
                 return Result.Ko;
             }
         }
@@ -94,13 +69,12 @@ namespace AkkaAzureServiceBusCleaner.Actors
         {
             switch (message)
             {
-                case Result.Start:
+                case long[] sequenceNumbers:
                     Logger.Info("Received streaming request message by {res}", message);
-                    await StreamToComplete();
+                    await StreamSequenceNumbers(sequenceNumbers);
                     break;
                 case Result.Interrupted:
                     Logger.Warning("Received interrupted");
-                    await StreamToComplete();
                     break;
                 case Result.ProcessingComplete:
                 case Result.ProcessingStopped:
@@ -123,11 +97,10 @@ namespace AkkaAzureServiceBusCleaner.Actors
         public static Props Props(
             ActorSystem system,
             ServiceBusReceiver receiver,
-            TimeSpan ago,
             ILoggingAdapter logger
         )
         {
-            return Akka.Actor.Props.Create(() => new StreamingDeferralActor(system, receiver, ago, logger));
+            return Akka.Actor.Props.Create(() => new StreamingDeferralActor(system, receiver, logger));
         }
     }
 }

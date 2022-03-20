@@ -25,9 +25,7 @@ namespace AkkaAzureServiceBusCleaner
 
             // since ServiceBusClient implements IAsyncDisposable we create it with "await using"
             var client = new ServiceBusClient(sbConfig.ConnectionString);
-            ServiceBusReceiver receiver = client.CreateReceiver(sbConfig.TopicName, sbConfig.Subscription);
-
-            // CompletePeekedMessagesService sbService = new CompletePeekedMessagesService(receiver, new TimeSpan(36, 0, 0), logger);
+            ServiceBusReceiver receiver = client.CreateReceiver(sbConfig.TopicName, sbConfig.Subscription, new ServiceBusReceiverOptions() { ReceiveMode = ServiceBusReceiveMode.ReceiveAndDelete });
 
             var config = ConfigurationFactory.ParseString(@"
 akka {  
@@ -36,12 +34,8 @@ akka {
 }");
 
             using (var system = ActorSystem.Create("cleanerSystem", config))
-            {
-                /* var stream = new StreamService(sbService, system, "user/receiverActor");
-                 var streamActor = system.ActorOf(StreamActor.Props(stream, system.Log), "streamActor");
-                 system.ActorOf(StreamReceiverActor.Props(streamActor, system.Log), "receiverActor");
-                */
-                var deferralActor = system.ActorOf(StreamingDeferralActor.Props(system, receiver, new TimeSpan(36, 0, 0), system.Log), "deferralActor");
+            { 
+                var routerActor = system.ActorOf(SBRouterActor.Props(system, receiver, new TimeSpan(16, 0, 0), system.Log), "sbRouter");
                 system.WhenTerminated.Wait();
             }
         }
