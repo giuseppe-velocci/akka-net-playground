@@ -15,6 +15,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
         private readonly ServiceBusReceiver Receiver;
         private readonly DateTime Ago;
         private readonly ILoggingAdapter Logger;
+        private readonly TimeSpan RecurringProcessingInterval;
 
         private IActorRef Router;
 
@@ -26,13 +27,15 @@ namespace AkkaAzureServiceBusCleaner.Actors
             ActorSystem system,
             ServiceBusReceiver receiver,
             TimeSpan ago,
-            ILoggingAdapter logger
+            ILoggingAdapter logger,
+            TimeSpan recurringProcessingInterval
         )
         {
             System = system;
             Receiver = receiver;
             Ago = DateTime.UtcNow.Subtract(ago);
             Logger = logger;
+            RecurringProcessingInterval = recurringProcessingInterval;
         }
 
         protected override void OnReceive(object message)
@@ -89,14 +92,20 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 .ToArray();
         }
 
+        protected override void PreStart()
+        {
+            Timers.StartPeriodicTimer("runStreamKey", Result.Start, TimeSpan.FromSeconds(3), RecurringProcessingInterval);
+        }
+
         public static Props Props(
             ActorSystem system,
             ServiceBusReceiver receiver,
             TimeSpan ago,
-            ILoggingAdapter logger
+            ILoggingAdapter logger,
+            TimeSpan recurringProcessingInterval
         )
         {
-            return Akka.Actor.Props.Create(() => new SBRouterActor(system, receiver, ago, logger));
+            return Akka.Actor.Props.Create(() => new SBRouterActor(system, receiver, ago, logger, recurringProcessingInterval));
         }
     }
 }

@@ -35,7 +35,13 @@ akka {
 
             using (var system = ActorSystem.Create("cleanerSystem", config))
             { 
-                var routerActor = system.ActorOf(SBRouterActor.Props(system, receiver, new TimeSpan(16, 0, 0), system.Log), "sbRouter");
+                var routerActor = system.ActorOf(SBRouterActor.Props(
+                    system, 
+                    receiver, 
+                    new TimeSpan(16, 0, 0), 
+                    system.Log,
+                    new TimeSpan(12, 0, 0)    
+                ), "sbRouter");
                 system.WhenTerminated.Wait();
             }
         }

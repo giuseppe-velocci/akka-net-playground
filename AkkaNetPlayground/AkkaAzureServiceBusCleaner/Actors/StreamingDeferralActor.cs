@@ -43,8 +43,6 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 .Log("source")
                 .SelectAsync(1, x => CompleteMessageOrNot(x))
                 .Log("select")
-                .Recover(_ => { return Result.Interrupted; })
-                .Log("recover")
                 .AlsoTo(actorSink)
                 .Log("toActor")
                 .RunWith(Sink.Ignore<Result>(), Materializer);
@@ -73,6 +71,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
                     Logger.Info("Received streaming request message by {res}", message);
                     await StreamSequenceNumbers(sequenceNumbers);
                     break;
+                // just logging
                 case Result.Interrupted:
                     Logger.Warning("Received interrupted");
                     break;
@@ -87,11 +86,6 @@ namespace AkkaAzureServiceBusCleaner.Actors
                     Logger.Info("unexpected message");
                     break;
             }
-        }
-
-        protected override void PreStart()
-        {
-            Timers.StartPeriodicTimer("runStreamKey", Result.Start, TimeSpan.FromSeconds(3), TimeSpan.FromHours(12));
         }
 
         public static Props Props(
