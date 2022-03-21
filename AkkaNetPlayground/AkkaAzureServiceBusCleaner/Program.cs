@@ -38,7 +38,9 @@ akka {
             { 
                 var routerConfig = new SBRouterConfig(
                     new TimeSpan(24, 0, 0), 
-                    new TimeSpan(12, 0, 0)
+                    new TimeSpan(12, 0, 0),
+                    24,
+                    8
                 );
                 var routerActor = system.ActorOf(SBRouterActor.Props(
                     system, 

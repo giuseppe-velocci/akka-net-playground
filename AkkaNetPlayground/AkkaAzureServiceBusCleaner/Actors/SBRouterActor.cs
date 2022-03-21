@@ -19,9 +19,6 @@ namespace AkkaAzureServiceBusCleaner.Actors
 
         private IActorRef Router;
         private DateTime ExpirationDate;
-
-        private int maxMessages = 24;
-        private int maxWorkers = 8;
         private long sequenceNumber = 0;
 
         public SBRouterActor(
@@ -45,7 +42,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 Logger.Debug("Expiration date set to {exp}", ExpirationDate);
                 var props = StreamingDeferralActor
                     .Props(System, Receiver, Logger)
-                    .WithRouter(new RoundRobinPool(maxWorkers));
+                    .WithRouter(new RoundRobinPool(Config.NumberOfWorkers));
                 Router = System.ActorOf(props, "router");
             }
 
@@ -77,7 +74,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 return;
             }
 
-            var splitSequenceOfNumbers = sequenceNumbers.GroupBy(k => k % maxWorkers);
+            var splitSequenceOfNumbers = sequenceNumbers.GroupBy(k => k % Config.NumberOfWorkers);
             foreach (var array in splitSequenceOfNumbers) {
                 Router.Tell(array.ToArray());
             }
@@ -91,7 +88,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
         private long[] PeekExpiredMessages()
         {
             var cancellationToken = new CancellationToken();
-            var messagesTask = Receiver.PeekMessagesAsync(maxMessages, sequenceNumber, cancellationToken);
+            var messagesTask = Receiver.PeekMessagesAsync(Config.MaxNumberOfPeekedMessages, sequenceNumber, cancellationToken);
             messagesTask.Wait();
             sequenceNumber = messagesTask.Result.LastOrDefault() is null ? 0 : messagesTask.Result.Last().SequenceNumber;
             return messagesTask.Result
