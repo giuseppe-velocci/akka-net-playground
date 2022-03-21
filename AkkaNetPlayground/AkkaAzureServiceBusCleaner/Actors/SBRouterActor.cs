@@ -56,6 +56,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
                     RunSequence();
                     break;
                 case Result.ProcessingComplete:
+                    Logger.Info("Completed processing");
                     Router.Tell(PoisonPill.Instance);
                     break;
                 default:
