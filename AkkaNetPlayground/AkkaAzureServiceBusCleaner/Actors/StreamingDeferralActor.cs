@@ -53,12 +53,12 @@ namespace AkkaAzureServiceBusCleaner.Actors
             try
             {
                 var lockedMessage = await Receiver.ReceiveDeferredMessageAsync(sequenceNumber);
-                Logger.Debug("Message {id} is to be removed", lockedMessage.MessageId);
+                Logger.Debug("Message {id} removed correctly", lockedMessage.MessageId);
                 return Result.Ok;
             }
             catch (Exception _) // to be imporved exception type!
             {
-                Logger.Debug("Message at sequnce number {id} must stay", sequenceNumber);
+                Logger.Debug("Message at sequnce number {id} throw an exception", sequenceNumber);
                 return Result.Ko;
             }
         }

@@ -3,6 +3,7 @@ using Akka.Event;
 using Akka.Routing;
 using Azure.Messaging.ServiceBus;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 
@@ -19,8 +20,8 @@ namespace AkkaAzureServiceBusCleaner.Actors
 
         private IActorRef Router;
 
-        private int maxMessages = 10;
-        private int maxWorkers = 5;
+        private int maxMessages = 24;
+        private int maxWorkers = 8;
         private long sequenceNumber = 0;
 
         public SBRouterActor(
@@ -65,6 +66,9 @@ namespace AkkaAzureServiceBusCleaner.Actors
 
         private void RunSequence()
         {
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+
             var sequenceNumbers = PeekExpiredMessages();
             if (sequenceNumbers.Length == 0)
             {
@@ -77,6 +81,9 @@ namespace AkkaAzureServiceBusCleaner.Actors
                 Router.Tell(array.ToArray());
             }
 
+            watch.Stop();
+            Logger.Debug("Completed iteration in {elapsed}", watch.Elapsed);
+
             Self.Tell(Result.IterationComplete);
         }
 
@@ -85,7 +92,7 @@ namespace AkkaAzureServiceBusCleaner.Actors
             var cancellationToken = new CancellationToken();
             var messagesTask = Receiver.PeekMessagesAsync(maxMessages, sequenceNumber, cancellationToken);
             messagesTask.Wait();
-            sequenceNumber = messagesTask.Result.Last().SequenceNumber;
+            sequenceNumber = messagesTask.Result.LastOrDefault() is null ? 0 : messagesTask.Result.Last().SequenceNumber;
             return messagesTask.Result
                 .Where(x => x.ExpiresAt.DateTime < Ago)
                 .Select(x => x.SequenceNumber)
