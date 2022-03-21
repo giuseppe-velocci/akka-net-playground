@@ -14,11 +14,11 @@ namespace AkkaAzureServiceBusCleaner.Actors
         public ITimerScheduler Timers { get; set; }
         private readonly ActorSystem System;
         private readonly ServiceBusReceiver Receiver;
-        private readonly DateTime Ago;
+        private readonly SBRouterConfig Config;
         private readonly ILoggingAdapter Logger;
-        private readonly TimeSpan RecurringProcessingInterval;
 
         private IActorRef Router;
+        private DateTime ExpirationDate;
 
         private int maxMessages = 24;
         private int maxWorkers = 8;
@@ -27,22 +27,22 @@ namespace AkkaAzureServiceBusCleaner.Actors
         public SBRouterActor(
             ActorSystem system,
             ServiceBusReceiver receiver,
-            TimeSpan ago,
             ILoggingAdapter logger,
-            TimeSpan recurringProcessingInterval
+            SBRouterConfig config
         )
         {
             System = system;
             Receiver = receiver;
-            Ago = DateTime.UtcNow.Subtract(ago);
             Logger = logger;
-            RecurringProcessingInterval = recurringProcessingInterval;
+            Config = config;
         }
 
         protected override void OnReceive(object message)
         {
             if (Router == null)
             {
+                ExpirationDate = DateTime.UtcNow.Subtract(Config.MessageTimeToLive);
+                Logger.Debug("Expiration date set to {exp}", ExpirationDate);
                 var props = StreamingDeferralActor
                     .Props(System, Receiver, Logger)
                     .WithRouter(new RoundRobinPool(maxWorkers));
@@ -94,25 +94,24 @@ namespace AkkaAzureServiceBusCleaner.Actors
             messagesTask.Wait();
             sequenceNumber = messagesTask.Result.LastOrDefault() is null ? 0 : messagesTask.Result.Last().SequenceNumber;
             return messagesTask.Result
-                .Where(x => x.ExpiresAt.DateTime < Ago)
+                .Where(x => x.State == ServiceBusMessageState.Deferred && x.ExpiresAt.DateTime < ExpirationDate)
                 .Select(x => x.SequenceNumber)
                 .ToArray();
         }
 
         protected override void PreStart()
         {
-            Timers.StartPeriodicTimer("runStreamKey", Result.Start, TimeSpan.FromSeconds(3), RecurringProcessingInterval);
+            Timers.StartPeriodicTimer("runStreamKey", Result.Start, TimeSpan.FromSeconds(3), Config.RecurringProcessingInterval);
         }
 
         public static Props Props(
             ActorSystem system,
             ServiceBusReceiver receiver,
-            TimeSpan ago,
             ILoggingAdapter logger,
-            TimeSpan recurringProcessingInterval
+            SBRouterConfig config
         )
         {
-            return Akka.Actor.Props.Create(() => new SBRouterActor(system, receiver, ago, logger, recurringProcessingInterval));
+            return Akka.Actor.Props.Create(() => new SBRouterActor(system, receiver, logger, config));
         }
     }
 }

@@ -190,6 +190,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Results.cs" />
+    <Compile Include="SBRouterConfig.cs" />
     <Compile Include="ServiceBusConfig.cs" />
     <Compile Include="Services\CompletePeekedMessagesService.cs" />
     <Compile Include="Services\ISourceService.cs" />

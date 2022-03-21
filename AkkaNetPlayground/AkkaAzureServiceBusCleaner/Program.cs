@@ -33,14 +33,18 @@ akka {
     loggers=[""Akka.Logger.Serilog.SerilogLogger, Akka.Logger.Serilog""]
 }");
 
+
             using (var system = ActorSystem.Create("cleanerSystem", config))
             { 
+                var routerConfig = new SBRouterConfig(
+                    new TimeSpan(24, 0, 0), 
+                    new TimeSpan(12, 0, 0)
+                );
                 var routerActor = system.ActorOf(SBRouterActor.Props(
                     system, 
                     receiver, 
-                    new TimeSpan(16, 0, 0), 
                     system.Log,
-                    new TimeSpan(12, 0, 0)    
+                    routerConfig
                 ), "sbRouter");
                 system.WhenTerminated.Wait();
             }
