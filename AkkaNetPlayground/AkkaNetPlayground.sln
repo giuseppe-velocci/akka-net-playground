@@ -11,7 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AkkaRemoteCaller", "AkkaRem
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AkkaAzureServiceBusCleaner", "AkkaAzureServiceBusCleaner\AkkaAzureServiceBusCleaner.csproj", "{523273C3-7371-4D1C-9DDF-868B431409B0}"
 EndProject
-
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AkkaReadOneMessage", "AkkaReadOneMessage\AkkaReadOneMessage.csproj", "{02FE808F-03E9-4BDD-9764-FAEB8308BF2B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,7 +35,10 @@ Global
 		{523273C3-7371-4D1C-9DDF-868B431409B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{523273C3-7371-4D1C-9DDF-868B431409B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{523273C3-7371-4D1C-9DDF-868B431409B0}.Release|Any CPU.Build.0 = Release|Any CPU
-
+		{02FE808F-03E9-4BDD-9764-FAEB8308BF2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02FE808F-03E9-4BDD-9764-FAEB8308BF2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02FE808F-03E9-4BDD-9764-FAEB8308BF2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02FE808F-03E9-4BDD-9764-FAEB8308BF2B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
